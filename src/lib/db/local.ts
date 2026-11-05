@@ -23,7 +23,17 @@ import {
 } from "./types";
 import { currentUsagePeriod, getPlan } from "../plans";
 
-const DB_DIR = process.env.PRINTREADY_DATA_DIR || path.join(process.cwd(), "data");
+// On serverless hosts (e.g. Vercel) the deployed bundle's working directory
+// is read-only, so the zero-config local demo DB would crash trying to
+// create ./data there. Fall back to /tmp (writable, though ephemeral per
+// instance) whenever we detect a serverless runtime and no explicit data
+// dir was configured. For real production use, configure Supabase instead
+// — see docs/DEPLOYMENT.md.
+const DB_DIR =
+  process.env.PRINTREADY_DATA_DIR ||
+  (process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME
+    ? "/tmp/printready-data"
+    : path.join(process.cwd(), "data"));
 fs.mkdirSync(DB_DIR, { recursive: true });
 const DB_PATH = path.join(DB_DIR, "printready.db");
 
